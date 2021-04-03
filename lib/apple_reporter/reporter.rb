@@ -11,7 +11,8 @@ module AppleReporter
         sales_path: '/sales/v1',
         finance_path: '/finance/v1',
         mode: 'Robot.XML',
-        version: '1_0'
+        version: '1_0',
+        decompress: true
       }.merge(config)
     end
 
@@ -48,7 +49,11 @@ module AppleReporter
     def handle_response(mode, response)
       if response.code == 200
         if response.headers[:content_type] == 'application/a-gzip'
-          decompress_gzip(response.body)
+          if @config[:decompress]
+            decompress_gzip(response.body)
+          else
+            {filename: response.headers[:filename], content: response.body}
+          end
         else
           handle_response_body_with_mode(response.body, mode)
         end
