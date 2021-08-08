@@ -31,11 +31,22 @@ module AppleReporter
       }
       payload[:account] = @config[:account] if @config[:account]
       payload[:password] = @config[:password] if @config[:password]
-      response = RestClient.post(
-        "#{ENDPOINT}#{api_path}",
-        "jsonRequest=#{payload.to_json}#{url_params}",
-        headers
-      )
+      verify_ssl = true # set false as workaround when Apple cert expired
+      response = nil
+      if false
+        response = RestClient::Resource.new(
+          "#{ENDPOINT}#{api_path}",
+          headers: headers,
+          verify_ssl: verify_ssl
+        ).post("jsonRequest=#{payload.to_json}#{url_params}")
+      else
+        response = RestClient::Request.execute(method: :post,
+                                               url: "#{ENDPOINT}#{api_path}",
+                                               headers: headers,
+                                               verify_ssl: verify_ssl,
+                                               timeout: 300, # 5 minute timeout
+                                               payload: "jsonRequest=#{payload.to_json}#{url_params}")
+      end
       handle_response(@config[:mode], response)
     rescue RestClient::ExceptionWithResponse => err
       if err.response
